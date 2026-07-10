@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Система управления выходом автотранспорта</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>🚗 Автопарк</h2>
+                <p>Система управления</p>
+            </div>
+            <nav class="sidebar-nav">
+                <button class="nav-btn active" data-page="dashboard">
+                    <span>📊</span> Дашборд
+                </button>
+                <button class="nav-btn" data-page="departments">
+                    <span>🏢</span> Подразделения
+                </button>
+                <button class="nav-btn" data-page="vehicles">
+                    <span>🚙</span> Транспорт
+                </button>
+                <button class="nav-btn" data-page="requests">
+                    <span>📝</span> Заявки
+                </button>
+                <button class="nav-btn" data-page="analytics">
+                    <span>📈</span> Аналитика
+                </button>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="header">
+                <h1 id="page-title">Дашборд</h1>
+                <div class="header-controls">
+                    <select id="department-filter" class="filter-select">
+                        <option value="all">Все подразделения</option>
+                    </select>
+                    <input type="date" id="date-filter" class="date-input">
+                </div>
+            </header>
+
+            <!-- Dashboard Page -->
+            <div id="dashboard-page" class="page active">
+                <!-- KPI Cards -->
+                <div class="kpi-grid">
+                    <div class="kpi-card total">
+                        <div class="kpi-icon">🚗</div>
+                        <div class="kpi-content">
+                            <h3>Всего транспорта</h3>
+                            <p class="kpi-value" id="total-vehicles">160</p>
+                        </div>
+                    </div>
+                    <div class="kpi-card repair">
+                        <div class="kpi-icon">🔧</div>
+                        <div class="kpi-content">
+                            <h3>На ремонте</h3>
+                            <p class="kpi-value" id="in-repair">0</p>
+                        </div>
+                    </div>
+                    <div class="kpi-card requests">
+                        <div class="kpi-icon">📋</div>
+                        <div class="kpi-content">
+                            <h3>С заявками</h3>
+                            <p class="kpi-value" id="with-requests">0</p>
+                        </div>
+                    </div>
+                    <div class="kpi-card no-requests">
+                        <div class="kpi-icon">❌</div>
+                        <div class="kpi-content">
+                            <h3>Без заявок</h3>
+                            <p class="kpi-value" id="without-requests">0</p>
+                        </div>
+                    </div>
+                    <div class="kpi-card rejected">
+                        <div class="kpi-icon">🚫</div>
+                        <div class="kpi-content">
+                            <h3>Отклонено</h3>
+                            <p class="kpi-value" id="rejected">0</p>
+                        </div>
+                    </div>
+                    <div class="kpi-card exit-rate">
+                        <div class="kpi-icon">📊</div>
+                        <div class="kpi-content">
+                            <h3>Выход сегодня</h3>
+                            <p class="kpi-value" id="exit-rate">0%</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts -->
+                <div class="charts-grid">
+                    <div class="chart-card">
+                        <h3>Выход по подразделениям</h3>
+                        <canvas id="department-chart"></canvas>
+                    </div>
+                    <div class="chart-card">
+                        <h3>Динамика за месяц</h3>
+                        <canvas id="monthly-chart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Recent Activity -->
+                <div class="activity-section">
+                    <h3>Последние заявки</h3>
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Дата</th>
+                                    <th>Подразделение</th>
+                                    <th>Гос. номер</th>
+                                    <th>Статус</th>
+                                    <th>Выход</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recent-requests">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Departments Page -->
+            <div id="departments-page" class="page">
+                <div class="page-header">
+                    <button class="btn btn-primary" onclick="openDepartmentModal()">+ Добавить подразделение</button>
+                </div>
+                <div class="departments-grid" id="departments-grid">
+                </div>
+            </div>
+
+            <!-- Vehicles Page -->
+            <div id="vehicles-page" class="page">
+                <div class="page-header">
+                    <button class="btn btn-primary" onclick="openVehicleModal()">+ Добавить транспорт</button>
+                </div>
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Гос. номер</th>
+                                <th>Марка/Модель</th>
+                                <th>Подразделение</th>
+                                <th>Статус</th>
+                                <th>На ремонте</th>
+                                <th>Действия</th>
+                            </tr>
+                        </thead>
+                        <tbody id="vehicles-table">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Requests Page -->
+            <div id="requests-page" class="page">
+                <div class="page-header">
+                    <button class="btn btn-primary" onclick="openRequestModal()">+ Создать заявку</button>
+                </div>
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Дата</th>
+                                <th>Подразделение</th>
+                                <th>Транспорт</th>
+                                <th>Статус</th>
+                                <th>Действия</th>
+                            </tr>
+                        </thead>
+                        <tbody id="requests-table">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Analytics Page -->
+            <div id="analytics-page" class="page">
+                <div class="analytics-controls">
+                    <select id="analytics-period" class="filter-select">
+                        <option value="week">За неделю</option>
+                        <option value="month" selected>За месяц</option>
+                        <option value="quarter">За квартал</option>
+                        <option value="year">За год</option>
+                    </select>
+                    <select id="analytics-department" class="filter-select">
+                        <option value="all">Все подразделения</option>
+                    </select>
+                </div>
+                <div class="charts-grid">
+                    <div class="chart-card full-width">
+                        <h3>Процент выхода по дням</h3>
+                        <canvas id="daily-exit-chart"></canvas>
+                    </div>
+                    <div class="chart-card">
+                        <h3>Распределение по статусам</h3>
+                        <canvas id="status-chart"></canvas>
+                    </div>
+                    <div class="chart-card">
+                        <h3>Заявки по подразделениям</h3>
+                        <canvas id="requests-dept-chart"></canvas>
+                    </div>
+                </div>
+                <div class="stats-summary">
+                    <h3>Статистика по подразделениям</h3>
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Подразделение</th>
+                                    <th>Всего ТС</th>
+                                    <th>На ремонте</th>
+                                    <th>Выход сегодня</th>
+                                    <th>Выход за месяц</th>
+                                    <th>Заявок</th>
+                                    <th>Отклонено</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dept-stats-table">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modals -->
+    <div id="modal-overlay" class="modal-overlay"></div>
+    
+    <!-- Department Modal -->
+    <div id="department-modal" class="modal">
+        <div class="modal-header">
+            <h3>Подразделение</h3>
+            <button class="close-btn" onclick="closeModal('department-modal')">×</button>
+        </div>
+        <form id="department-form" class="modal-form">
+            <input type="hidden" id="dept-id">
+            <div class="form-group">
+                <label>Название</label>
+                <input type="text" id="dept-name" required>
+            </div>
+            <div class="form-group">
+                <label>Количество транспорта (3-19)</label>
+                <input type="number" id="dept-vehicle-count" min="3" max="19" required>
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('department-modal')">Отмена</button>
+                <button type="submit" class="btn btn-primary">Сохранить</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Vehicle Modal -->
+    <div id="vehicle-modal" class="modal">
+        <div class="modal-header">
+            <h3>Транспортное средство</h3>
+            <button class="close-btn" onclick="closeModal('vehicle-modal')">×</button>
+        </div>
+        <form id="vehicle-form" class="modal-form">
+            <input type="hidden" id="vehicle-id">
+            <div class="form-group">
+                <label>Гос. номер</label>
+                <input type="text" id="vehicle-plate" required>
+            </div>
+            <div class="form-group">
+                <label>Марка/Модель</label>
+                <input type="text" id="vehicle-model" required>
+            </div>
+            <div class="form-group">
+                <label>Подразделение</label>
+                <select id="vehicle-department" required>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>На ремонте</label>
+                <input type="checkbox" id="vehicle-in-repair">
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('vehicle-modal')">Отмена</button>
+                <button type="submit" class="btn btn-primary">Сохранить</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Request Modal -->
+    <div id="request-modal" class="modal">
+        <div class="modal-header">
+            <h3>Заявка на выход</h3>
+            <button class="close-btn" onclick="closeModal('request-modal')">×</button>
+        </div>
+        <form id="request-form" class="modal-form">
+            <input type="hidden" id="request-id">
+            <div class="form-group">
+                <label>Дата</label>
+                <input type="date" id="request-date" required>
+            </div>
+            <div class="form-group">
+                <label>Подразделение</label>
+                <select id="request-department" required onchange="loadDepartmentVehicles()">
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Транспорт</label>
+                <select id="request-vehicle" required>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Цель</label>
+                <textarea id="request-purpose" rows="3"></textarea>
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('request-modal')">Отмена</button>
+                <button type="submit" class="btn btn-primary">Сохранить</button>
+            </div>
+        </form>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
